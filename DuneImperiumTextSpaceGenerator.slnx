@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DIGeneratorLibrary/DIGeneratorLibrary.csproj" />
+  <Project Path="DuneImperiumTextSpaceGenerator/DuneImperiumTextSpaceGenerator.csproj" />
+</Solution>
