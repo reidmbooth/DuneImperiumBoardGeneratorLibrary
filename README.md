@@ -1,4 +1,4 @@
-#Dune Imperium Space Generator
+# Dune Imperium Space Generator
 
 todo:	add extra costs randomly to some spaces
 		verify correctness and accuracy of libraries
