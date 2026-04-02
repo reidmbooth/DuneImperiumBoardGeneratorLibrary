@@ -7,8 +7,8 @@ namespace DIGeneratorLibrary
     using System.Collections;
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
-    using System.Drawing;
-    using System.Text.Json.Serialization;
+    using System.IO;
+    using Microsoft.Extensions.Logging;
 
     public class Spaces
     {
@@ -35,6 +35,8 @@ namespace DIGeneratorLibrary
         [JsonProperty("balanceLeeway")]
         private double balance_leeway = 0.5;
 
+        private Random rand;
+
         private List<ID> adjustable_gains = new();
         private List<ID> adjustable_costs = new();
 
@@ -47,19 +49,23 @@ namespace DIGeneratorLibrary
         private int[] gain_targets = { 0, 16, 6, 4, 0, 0, 0, 0, 0, 0, 3, 8, 17, 10, 7, 1, 1, 1, 1, 3, 0, 1, 1, 1, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         
 
-        public void Generate(Version v)
+        public void Generate(Version v, ILogger logger)
         {
-            
+            if(!File.Exists("config.json"))
+            {
+                logger.Log(LogLevel.Error, "config.json not found. Please create a config file with the appropriate structure.");
+                return;
+            }
             GeneratorConfig config = GeneratorConfig.LoadFromJson("config.json");
             ItemPoolBuilder ipb = new ItemPoolBuilder(config, weights_base, v);
-            ipb.BuildPool();
+            ipb.BuildPool(rand, logger);
             SpaceAssembler sa = new SpaceAssembler(ipb.GetGainPool(), ipb.GetCostPool(), spaces, weights_base);
-            sa.Assemble();
+            sa.Assemble(logger);
             //config.Construct();
             //config.SaveToJson("config.json");
         }
 
-        public bool Validate(out string reason)
+        public bool Validate(ILogger logger, out string reason)
         {
             int[] gains_counts = new int[Enum.GetValues<ID>().Count()];
             int[] costs_counts = new int[Enum.GetValues<ID>().Count()];
@@ -75,7 +81,8 @@ namespace DIGeneratorLibrary
             }
             for (int i = 0; i < gains_counts.Length; i++)
             {
-                Console.WriteLine($"{(ID)i}:{gains_counts[i]}:{(GlobalGainMinimums.TryGetValue((ID)i, out var v) ? $"!!!{v}" : 0)}");
+                
+                logger.Log(LogLevel.Debug, $"{(ID)i}:{gains_counts[i]}:{(GlobalGainMinimums.TryGetValue((ID)i, out var v) ? $"!!!{v}" : 0)}");
 
             }
 
@@ -118,6 +125,13 @@ namespace DIGeneratorLibrary
         public Spaces()
         {
             spaces = new List<Space>();
+            rand = new Random();
+        }
+
+        public Spaces(Random _rand)
+        {
+            spaces = new List<Space>();
+            rand = _rand;
         }
 
         public List<Space> GetSpaces()
@@ -163,38 +177,55 @@ namespace DIGeneratorLibrary
         {
             foreach(Space space in spaces)
             {
-                Console.WriteLine($"{space.Balance(weights_base)}: {space.Name}:");
+                Console.WriteLine($"{space.Name}:");
+                Console.WriteLine($"Space Balance: {Math.Round(space.Balance(weights_base),2)}");
                 foreach(KeyValuePair<ID, int> kvp in space.Costs){
                     if (kvp.Value > 0)
                     {
+                        
                         Console.Write($"{kvp.Value} {kvp.Key}, ");
                     }
                 }
                 Console.Write("\b\b -> ");
+                bool firstcomma = true;
                 foreach (KeyValuePair<ID, int> kvp in space.Gains)
                 {
+                    
                     if (kvp.Value > 0)
                     {
-                        Console.Write($"{kvp.Value} {kvp.Key}, ");
+                        if (firstcomma)
+                        {
+                            firstcomma = false;
+                        }
+                        else
+                        {
+                            Console.Write(", ");
+                        }
+                        Console.Write($"{kvp.Value} {kvp.Key}");
                     }
                 }
-                Console.Write($"\b\b\n\n");
+                //Console.Write($"\b\b");
+                Console.Write($"\n\n");
             }
         }
 
         public void SaveToJSON(string filename)
         {
-            /*TextWriter writer = new StreamWriter(filename);
-            JsonTextWriter w = new JsonTextWriter(writer);
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Serialize(w, this);*/
-            File.WriteAllText(filename, JsonConvert.SerializeObject(this, Formatting.Indented));
+            JsonSerializerSettings st = new JsonSerializerSettings();
+            st.Formatting = Formatting.Indented;
+            st.Converters.Add(new StringEnumConverter());
+            File.WriteAllText(filename, JsonConvert.SerializeObject(this, st));
         }
         
         public static Spaces LoadFromJSON(string filename)
         {
+            JsonSerializerSettings st = new JsonSerializerSettings();
+            st.Formatting = Formatting.Indented;
+            st.Converters.Add(new StringEnumConverter());
+
             TextReader reader = new StreamReader(filename);
             JsonSerializer serializer = new JsonSerializer();
+            //serializer.
             return (Spaces)serializer.Deserialize(reader, typeof(Spaces));
         }
     }
@@ -257,25 +288,33 @@ namespace DIGeneratorLibrary
         private double[] weights_base = { 2.5, 1, 1.8, 2.0, 1.25, 1.5, 0.1, 0.5, 1.0, 0.5, 1.5, 2, 1.5, 1, 1.5, 1, 2, 8, 11, 1, 2, 2, 3, 2, 1.5, 1.5, 4.5, -0.5, -0.5, 2, 1, 2, 2.5, 2, 4, 8, 1, 1.5, 4.5 };
         double[] minimums = { -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, 1, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0, -5.0 };
         double[] maximums = { 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0 };
+        Random rand = new();
 
-        public static void Generate(Version version)
+        public static void Generate(Version version, ILogger logger)
         {
             Spaces spaces = Spaces.LoadFromJSON("spaces.json");
             spaces.Filter(version);
 
-            spaces.Generate(version);
+            spaces.Generate(version, logger);
             
 
 
             string reason = "";
-            spaces.Validate(out reason);
-            Console.WriteLine(reason);
+            spaces.Validate(logger, out reason);
+            logger.Log(LogLevel.Error, reason);
             spaces.PrintInformation();
             spaces.SaveToJSON("spaces_" + version.ToString() + ".json");
         }
 
+        public static void BuildConfig(ILogger logger)
+        {
+            GeneratorConfig config = new GeneratorConfig();
+            config.Construct();
+            config.SaveToJson("config.json");
+        }
 
-        public static void BuildSpaces()
+
+        public static void BuildSpaces(ILogger logger)
         {
             List<Space> spaces = new List<Space>();
             
@@ -737,15 +776,17 @@ namespace DIGeneratorLibrary
             return total_costs;
         }
 
-        public void Generate(double[] weights_base, double balance_leeway, List<ID> adjustable_costs, List<ID> adjustable_gains)
+        public void Generate(double[] weights_base, double balance_leeway, List<ID> adjustable_costs, List<ID> adjustable_gains, Random rand)
         {
-           
 
-            
 
-            Random rand = new Random();
+            int counter = 0;
+
+            rand = new Random();
             while (Math.Abs(Balance(weights_base)) > balance_leeway)
             {
+                if (counter > 10000) break;
+                counter++;
                 foreach (var kv in GainMinimums)
                 {
                     var id = kv.Key;
@@ -758,7 +799,8 @@ namespace DIGeneratorLibrary
                     }
                     else
                     {
-                        Gains.TryAdd(id, v.GetValueOrDefault());
+                        Gains.Add(id, v.GetValueOrDefault());
+                        //Gains.TryAdd(id, v.GetValueOrDefault());
                     }
                     //if (GainMinimums.TryGetValue(id, out var min) && !min.HasValue) { Gains.Add(id, )}
                     Console.WriteLine($"Set minimum {id} to {Gains[id]} on {Name}");
@@ -782,10 +824,10 @@ namespace DIGeneratorLibrary
                             else
                             {
                                 Console.WriteLine("Adding cost for space cost minimums");
-                                if (!Costs.TryAdd(id, cost + 1))
-                                {
+                                //if (!Costs.TryAdd(id, cost + 1))
+                                //{
                                     Costs[id] += 1;
-                                }
+                                //}
                                 //Costs[id] += 1;
                             }
                         }
@@ -815,10 +857,10 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        if (!Costs.TryAdd(id, cost - 1))
-                                        {
+                                        //if (!Costs.TryAdd(id, cost - 1))
+                                        //{
                                             Costs[id] -= 1;
-                                        }
+                                        //}
                                         //Costs.Add(id, cost - 1);
                                         //Costs[id] -= 1;
                                         Console.WriteLine($"Adjusting cost down of {id} for {Name}");
@@ -827,10 +869,10 @@ namespace DIGeneratorLibrary
                                 }
                                 else if (cost - 1 >= 0)
                                 {
-                                    if (!Costs.TryAdd(id, cost - 1))
-                                    {
+                                    //if (!Costs.TryAdd(id, cost - 1))
+                                    //{
                                         Costs[id] -= 1;
-                                    }
+                                    //}
                                     //Costs[id] -= 1;
                                     Console.WriteLine($"Adjusting cost down of {id} for {Name}");
                                     break;
@@ -855,10 +897,10 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        if(!Gains.TryAdd(id, gain + 1))
-                                        {
+                                        //if(!Gains.TryAdd(id, gain + 1))
+                                        //{
                                             Gains[id] += 1;
-                                        }
+                                        //}
                                         //Gains.TryAdd(id, gain + 1);
                                         //Gains[id] += 1;
                                         Console.WriteLine($"Adjusting gain up of {id} for {Name}");
@@ -867,10 +909,10 @@ namespace DIGeneratorLibrary
                                 }
                                 else
                                 {
-                                    if (!Gains.TryAdd(id, gain + 1))
-                                    {
+                                    //if (!Gains.TryAdd(id, gain + 1))
+                                    //{
                                         Gains[id] += 1;
-                                    }
+                                    //}
                                     //Gains[id] += 1;
                                     Console.WriteLine($"Adjusting gain up of {id} for {Name}");
                                     break;
@@ -903,10 +945,10 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        if (!Gains.TryAdd(id, gain - 1))
-                                        {
+                                        //if (!Gains.TryAdd(id, gain - 1))
+                                        //{
                                             Gains[id] -= 1;
-                                        }
+                                        //}
                                         //Gains.Add(id, gain - 1);
                                         //Gains[id] -= 1;
                                         Console.WriteLine($"Adjusting gain down of {id} for {Name}");
@@ -915,10 +957,10 @@ namespace DIGeneratorLibrary
                                 }
                                 else if (gain - 1 >= 0)
                                 {
-                                    if (!Gains.TryAdd(id, gain - 1))
-                                    {
+                                    //if (!Gains.TryAdd(id, gain - 1))
+                                    //{
                                         Gains[id] -= 1;
-                                    }
+                                    //}
                                     //Gains[id] -= 1;
                                     Console.WriteLine($"Adjusting gain down of {id} for {Name}");
                                     break;
@@ -943,10 +985,10 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        if (!Costs.TryAdd(id, cost + 1))
-                                        {
+                                        //if (!Costs.TryAdd(id, cost + 1))
+                                        //{
                                             Costs[id] += 1;
-                                        }
+                                        //}
                                         //Costs.Add(id, cost + 1);
                                         //Costs[id] += 1;
                                         Console.WriteLine($"Adjusting cost up of {id} for {Name}");
@@ -955,10 +997,10 @@ namespace DIGeneratorLibrary
                                 }
                                 else
                                 {
-                                    if (!Costs.TryAdd(id, cost + 1))
-                                    {
+                                    //if (!Costs.TryAdd(id, cost + 1))
+                                    //{
                                         Costs[id] += 1;
-                                    }
+                                    //}
                                     //Costs.Add(id, cost + 1);
                                     //Costs[id] += 1;
                                     Console.WriteLine($"Adjusting cost up of {id} for {Name}");

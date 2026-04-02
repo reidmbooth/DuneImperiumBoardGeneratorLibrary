@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -21,7 +22,7 @@ namespace DIGeneratorLibrary
             
         }
 
-        public void Assemble()
+        public void Assemble(ILogger logger)
         {
             foreach (PoolItem p in GainPoolItems)
             {
@@ -83,7 +84,7 @@ namespace DIGeneratorLibrary
             {
                 double least_impact = 55535835;
                 Space least_impact_causing = null;
-                Console.WriteLine($"Attempting to add {p.id} {p.value}");
+                logger.Log(LogLevel.Debug, $"Attempting to add {p.id} {p.value}");
 
                 if (p.value < 0)
                 {
@@ -95,7 +96,7 @@ namespace DIGeneratorLibrary
                         if (sorted[i].CostsAllowed == false) continue;
                         if (sorted[i].Costs[ID.FactionSpace] > 0 && p.id == ID.Faction2req) continue;
                         sp.Costs[p.id] = sp.Costs[p.id] + p.qty;
-                        Console.WriteLine($"Adding {p.id} {p.qty} {p.value} to space {sp.Name} seemed to be the best improvement, newval {sp.Balance(weights_base)}");
+                        logger.Log(LogLevel.Debug, $"Adding {p.id} {p.qty} {p.value} to space {sp.Name} seemed to be the best improvement, new val {sp.Balance(weights_base)}");
                         break;
                     }
 
@@ -110,7 +111,7 @@ namespace DIGeneratorLibrary
                         if (sorted[i].GainsAllowed == false) continue;
                         if (p.id == ID.Combat && sorted[i].Gains[ID.Combat] > 0) continue;
                         sp.Gains[p.id] = sp.Gains[p.id] + p.qty;
-                        Console.WriteLine($"Adding {p.id} {p.qty} {p.value} to space {sp.Name} seemed to be the best improvement, newval {sp.Balance(weights_base)}");
+                        logger.Log(LogLevel.Debug, $"Adding {p.id} {p.qty} {p.value} to space {sp.Name} seemed to be the best improvement, new val {sp.Balance(weights_base)}");
                         break;
                     }
                 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks.Dataflow;
+using Microsoft.Extensions.Logging;
 
 namespace DIGeneratorLibrary
 {
@@ -28,9 +29,9 @@ namespace DIGeneratorLibrary
             version = _version;
         }
 
-        public void BuildPool()
+        public void BuildPool(Random rand, ILogger logger)
         {
-            Random rand = new Random();
+            rand = new Random();
             foreach (var item in config.GetItems(version)
                 .Where(i => i.id != ID.FactionSpace)
                 .Where(i => i.id != ID.GoingToSpace)
@@ -49,14 +50,16 @@ namespace DIGeneratorLibrary
                 if (item.maximum_gain > 0)
                 {
                     int r = rand.Next(item.minimum_gain, item.maximum_gain + 1);
-                    Console.WriteLine($"{r} {item.id} rolled");
+                    logger.Log(LogLevel.Debug, $"{r} {item.id} rolled for gain");
+                    //Console.WriteLine($"{r} {item.id} rolled");
                     if (r > 0)
                     {
                         int split = Math.Min(rand.Next(item.minimum_gain_split, item.maximum_gain_split + 1), r);
                         List<int> partition = RandomPartitionInt(r, split, rand);
                         foreach (int i in partition)
                         {
-                            Console.WriteLine($"Added to gain pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
+                            logger.Log(LogLevel.Debug, $"Added to gain pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
+                            //Console.WriteLine($"Added to gain pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
                             GainPoolItems.Add(new PoolItem { id = item.id, qty = i, value = i * weights_base[(int)item.id] });
                         }
                     }
@@ -72,14 +75,14 @@ namespace DIGeneratorLibrary
                     /*if (item.maximum_cost_split == 1)
                     {*/
                     int r = rand.Next(item.minimum_cost, item.maximum_cost + 1);
-                    Console.WriteLine($"{r} {item.id} rolled");
+                    logger.Log(LogLevel.Debug, $"{r} {item.id} rolled");
                     if (r > 0)
                     {
                         int split = Math.Min(rand.Next(item.minimum_cost_split, item.maximum_cost_split + 1), r);
                         List<int> partition = RandomPartitionInt(r, split, rand);
                         foreach (int i in partition)
                         {
-                            Console.WriteLine($"Added to cost pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
+                            logger.Log(LogLevel.Debug, $"Added to cost pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
                             CostPoolItems.Add(new PoolItem { id = item.id, qty = i, value = i * weights_base[(int)item.id] });
                         }
                     }
@@ -109,7 +112,7 @@ namespace DIGeneratorLibrary
             {
                 costs_total += p.value;
             }
-            Console.WriteLine($"Total costs: {costs_total} Total gains: {gains_total}");
+            logger.Log(LogLevel.Debug, $"Total costs: {costs_total} Total gains: {gains_total}");
         }
 
         public static List<int> RandomPartitionInt(int x, int y, Random _rng)
