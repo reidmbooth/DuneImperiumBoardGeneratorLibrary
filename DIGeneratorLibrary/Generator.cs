@@ -8,6 +8,7 @@ namespace DIGeneratorLibrary
     using System.Diagnostics;
     using System.Diagnostics.Contracts;
     using System.Drawing;
+    using System.Text.Json.Serialization;
 
     public class Spaces
     {
@@ -27,7 +28,9 @@ namespace DIGeneratorLibrary
         public Dictionary<ID, int?> GlobalCostMaximums { get; set; } = new();
 
         [JsonProperty("weights")]
-        private double[] weights_base = { 2.5, 1, 1.8, 2.0, 1.25, 1.5, 0.1, 0.5, 1.0, 0.5, 1.5, 2, 1.5, 1, 1.5, 1, 2, 8, 11, 1, 2, 2, 3, 2, 1.5, 1.5, 4.5, -0.5, -0.5, 2, 1, 2, 2.5, 2, 4, 8, 1, 1.5, 4.5 };
+        //private double[] weights_base = { 2.5, 1, 1.8, 2.0, 1.25, 1.5, 0.1, 0.5, 1.0, 0.5, 1.5, 2, 1.5, 1, 1.5, 1, 2, 8, 11, 1, 2, 2, 3, 2, 1.5, 1.5, 4.5, -0.5, -0.5, 2, 1, 2, 2.5, 2, 4, 8, 1, 1.5, 4.5 };
+        private double[] weights_base = { 2.6, 1, 1.57, 1.52, 1.3, 1.6, 0.1, 0.3, 1.1, 0.7, 1.6, 2, 1.57, 0.73, 1.6, 0.6, 2.14, 8, 11, 0.95, 2.3, 2.2, 3.3, 1.3, 1.6, 1.51, 4.41, -0.73, 0.05, 1.6, 4.85, 2.1, 0.75, 2.17, 3.14, 6.18, 0, 1.6, 4.59 };
+
 
         [JsonProperty("balanceLeeway")]
         private double balance_leeway = 0.5;
@@ -40,15 +43,20 @@ namespace DIGeneratorLibrary
         public void SetGlobalCostMin(ID id, int value) { GlobalCostMinimums[id] = value; }
         public void SetGlobalCostMax(ID id, int value) { GlobalCostMaximums[id] = value; }
 
-        public void Generate()
+        private int[] cost_targets = { 22, 19, 14, 6, 1, 8, 2, 5, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        private int[] gain_targets = { 0, 16, 6, 4, 0, 0, 0, 0, 0, 0, 3, 8, 17, 10, 7, 1, 1, 1, 1, 3, 0, 1, 1, 1, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        
+
+        public void Generate(Version v)
         {
             
-            foreach (Space space in spaces)
-            {
-                Console.WriteLine($"Working on space {space.Name}");
-                space.Generate(weights_base, balance_leeway, adjustable_costs, adjustable_gains);
-                space.DeleteDuplicates();
-            }
+            GeneratorConfig config = GeneratorConfig.LoadFromJson("config.json");
+            ItemPoolBuilder ipb = new ItemPoolBuilder(config, weights_base, v);
+            ipb.BuildPool();
+            SpaceAssembler sa = new SpaceAssembler(ipb.GetGainPool(), ipb.GetCostPool(), spaces, weights_base);
+            sa.Assemble();
+            //config.Construct();
+            //config.SaveToJson("config.json");
         }
 
         public bool Validate(out string reason)
@@ -125,173 +133,29 @@ namespace DIGeneratorLibrary
         {
             spaces = spaces.Where(s => s.Versions.Contains(to_filter)).ToList();
 
-            if (to_filter == Version.Base)
-            {
-                //adjustable_costs = new List<ID>();
-                adjustable_costs.Add(ID.SolariValue);
-                adjustable_costs.Add(ID.SpiceValue);
-                adjustable_costs.Add(ID.WaterValue);
-                //adjustable_costs.Add(ID.Faction2req);
-                adjustable_costs.Add(ID.DrawIntrigue);
-                adjustable_costs.Add(ID.DrawCard);
+            int[] base_cost_targets = { 22, 19, 14, 6, 1, 8, 2, 5, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] base_gain_targets = { 0, 16, 6, 4, 0, 0, 0, 0, 0, 0, 3, 8, 17, 10, 7, 1, 1, 1, 1, 3, 0, 1, 1, 1, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] ix_cost_targets = { 22, 18, 12, 6, 2, 8, 2, 5, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] ix_gain_targets = { 0, 8, 6, 4, 0, 0, 0, 0, 0, 0, 3, 8, 12, 10, 7, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] iximmo_cost_targets = { 22, 18, 12, 6, 2, 8, 2, 5, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] iximmo_gain_targets = { 0, 8, 6, 4, 0, 0, 0, 0, 0, 0, 3, 8, 12, 10, 6, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] uprising_cost_targets = { 23, 21, 13, 8, 3, 8, 2, 6, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] uprising_gain_targets = { 0, 7, 3, 1, 0, 0, 0, 0, 0, 0, 4, 8, 19, 10, 7, 1, 1, 1, 1, 3, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1, 2, 1, 1, 1, 1, 1, 0, 1 };
 
-                //adjustable_gains = new List<ID>();
-                adjustable_gains.Add(ID.SolariValue);
-                adjustable_gains.Add(ID.SpiceValue);
-                adjustable_gains.Add(ID.WaterValue);
-                adjustable_gains.Add(ID.DrawIntrigue);
-                //adjustable_gains.Add(ID.FactionBump);
-                adjustable_gains.Add(ID.GainTroops);
-                adjustable_gains.Add(ID.Combat);
-                adjustable_gains.Add(ID.DrawCard);
-                //adjustable_gains.Add(ID.StealIntrigue);
-                adjustable_gains.Add(ID.Trash);
-                //adjustable_gains.Add(ID.HighCouncil);
-                //adjustable_gains.Add(ID.Swordmaster);
-                adjustable_gains.Add(ID.SpiceAccumulation);
-                //adjustable_gains.Add(ID.Shipping);
-                adjustable_gains.Add(ID.Foldspace);
-                //adjustable_gains.Add(ID.Mentat);
-                adjustable_gains.Add(ID.TempInfluence);
-                //adjustable_gains.Add(ID.TechDiscountNegotiator);
-                //adjustable_gains.Add(ID.BuyTech);
-                //adjustable_gains.Add(ID.GetDreadnought);
-                //adjustable_gains.Add(ID.Microscope);
-                adjustable_gains.Add(ID.DiscardDrawIntrigue);
-                //adjustable_gains.Add(ID.Contract);
-                //adjustable_gains.Add(ID.PickUpWorker);
-                //adjustable_gains.Add(ID.Spy);
-                //adjustable_gains.Add(ID.TwoSpiceOrDeploy);
-                //adjustable_gains.Add(ID.FourSpiceOrDeployTwo);
-                //adjustable_gains.Add(ID.GetMakerHook);
-                //adjustable_gains.Add(ID.DestroyShieldWall);
-                adjustable_gains.Add(ID.WildBump);
-            }
-            else if (to_filter == Version.Ix)
+            if (to_filter == Version.Ix)
             {
-                //List<ID> adjustable_costs = new List<ID>();
-                adjustable_costs.Add(ID.SolariValue);
-                adjustable_costs.Add(ID.SpiceValue);
-                adjustable_costs.Add(ID.WaterValue);
-                //adjustable_costs.Add(ID.Faction2req);
-                adjustable_costs.Add(ID.DrawIntrigue);
-                adjustable_costs.Add(ID.DrawCard);
-
-                //List<ID> adjustable_gains = new List<ID>();
-                adjustable_gains.Add(ID.SolariValue);
-                adjustable_gains.Add(ID.SpiceValue);
-                adjustable_gains.Add(ID.WaterValue);
-                adjustable_gains.Add(ID.DrawIntrigue);
-                //adjustable_gains.Add(ID.FactionBump);
-                adjustable_gains.Add(ID.GainTroops);
-                adjustable_gains.Add(ID.Combat);
-                adjustable_gains.Add(ID.DrawCard);
-                //adjustable_gains.Add(ID.StealIntrigue);
-                adjustable_gains.Add(ID.Trash);
-                //adjustable_gains.Add(ID.HighCouncil);
-                //adjustable_gains.Add(ID.Swordmaster);
-                adjustable_gains.Add(ID.SpiceAccumulation);
-                adjustable_gains.Add(ID.Shipping);
-                adjustable_gains.Add(ID.Foldspace);
-                //adjustable_gains.Add(ID.Mentat);
-                adjustable_gains.Add(ID.TempInfluence);
-                adjustable_gains.Add(ID.TechDiscountNegotiator);
-                adjustable_gains.Add(ID.BuyTech);
-                adjustable_gains.Add(ID.GetDreadnought);
-                //adjustable_gains.Add(ID.Microscope);
-                adjustable_gains.Add(ID.DiscardDrawIntrigue);
-                //adjustable_gains.Add(ID.Contract);
-                //adjustable_gains.Add(ID.PickUpWorker);
-                //adjustable_gains.Add(ID.Spy);
-                //adjustable_gains.Add(ID.TwoSpiceOrDeploy);
-                //adjustable_gains.Add(ID.FourSpiceOrDeployTwo);
-                //adjustable_gains.Add(ID.GetMakerHook);
-                //adjustable_gains.Add(ID.DestroyShieldWall);
-                adjustable_gains.Add(ID.WildBump);
+                cost_targets = ix_cost_targets;
+                gain_targets = ix_gain_targets;
             }
             else if (to_filter == Version.IxImmo)
             {
-                //List<ID> adjustable_costs = new List<ID>();
-                adjustable_costs.Add(ID.SolariValue);
-                adjustable_costs.Add(ID.SpiceValue);
-                adjustable_costs.Add(ID.WaterValue);
-                //adjustable_costs.Add(ID.Faction2req);
-                adjustable_costs.Add(ID.DrawIntrigue);
-                adjustable_costs.Add(ID.DrawCard);
-
-                //List<ID> adjustable_gains = new List<ID>();
-                adjustable_gains.Add(ID.SolariValue);
-                adjustable_gains.Add(ID.SpiceValue);
-                adjustable_gains.Add(ID.WaterValue);
-                adjustable_gains.Add(ID.DrawIntrigue);
-                //adjustable_gains.Add(ID.FactionBump);
-                adjustable_gains.Add(ID.GainTroops);
-                adjustable_gains.Add(ID.Combat);
-                adjustable_gains.Add(ID.DrawCard);
-                //adjustable_gains.Add(ID.StealIntrigue);
-                adjustable_gains.Add(ID.Trash);
-                //adjustable_gains.Add(ID.HighCouncil);
-                //adjustable_gains.Add(ID.Swordmaster);
-                adjustable_gains.Add(ID.SpiceAccumulation);
-                adjustable_gains.Add(ID.Shipping);
-                adjustable_gains.Add(ID.Foldspace);
-                //adjustable_gains.Add(ID.Mentat);
-                adjustable_gains.Add(ID.TempInfluence);
-                adjustable_gains.Add(ID.TechDiscountNegotiator);
-                adjustable_gains.Add(ID.BuyTech);
-                adjustable_gains.Add(ID.GetDreadnought);
-                adjustable_gains.Add(ID.Microscope);
-                adjustable_gains.Add(ID.DiscardDrawIntrigue);
-                //adjustable_gains.Add(ID.Contract);
-                //adjustable_gains.Add(ID.PickUpWorker);
-                //adjustable_gains.Add(ID.Spy);
-                //adjustable_gains.Add(ID.TwoSpiceOrDeploy);
-                //adjustable_gains.Add(ID.FourSpiceOrDeployTwo);
-                //adjustable_gains.Add(ID.GetMakerHook);
-                //adjustable_gains.Add(ID.DestroyShieldWall);
-                adjustable_gains.Add(ID.WildBump);
+                cost_targets = iximmo_cost_targets;
+                gain_targets = iximmo_gain_targets;
             }
             else if (to_filter == Version.Uprising)
             {
-                //List<ID> adjustable_costs = new List<ID>();
-                adjustable_costs.Add(ID.SolariValue);
-                adjustable_costs.Add(ID.SpiceValue);
-                adjustable_costs.Add(ID.WaterValue);
-                //adjustable_costs.Add(ID.Faction2req);
-                adjustable_costs.Add(ID.DrawIntrigue);
-                adjustable_costs.Add(ID.DrawCard);
-
-                //List<ID> adjustable_gains = new List<ID>();
-                adjustable_gains.Add(ID.SolariValue);
-                adjustable_gains.Add(ID.SpiceValue);
-                adjustable_gains.Add(ID.WaterValue);
-                adjustable_gains.Add(ID.DrawIntrigue);
-                //adjustable_gains.Add(ID.FactionBump);
-                adjustable_gains.Add(ID.GainTroops);
-                adjustable_gains.Add(ID.Combat);
-                adjustable_gains.Add(ID.DrawCard);
-                //adjustable_gains.Add(ID.StealIntrigue);
-                adjustable_gains.Add(ID.Trash);
-                //adjustable_gains.Add(ID.HighCouncil);
-                //adjustable_gains.Add(ID.Swordmaster);
-                adjustable_gains.Add(ID.SpiceAccumulation);
-                //adjustable_gains.Add(ID.Shipping);
-                adjustable_gains.Add(ID.Foldspace);
-                //adjustable_gains.Add(ID.Mentat);
-                adjustable_gains.Add(ID.TempInfluence);
-                //adjustable_gains.Add(ID.TechDiscountNegotiator);
-                //adjustable_gains.Add(ID.BuyTech);
-                //adjustable_gains.Add(ID.GetDreadnought);
-                //adjustable_gains.Add(ID.Microscope);
-                adjustable_gains.Add(ID.DiscardDrawIntrigue);
-                adjustable_gains.Add(ID.Contract);
-                adjustable_gains.Add(ID.PickUpWorker);
-                adjustable_gains.Add(ID.Spy);
-                adjustable_gains.Add(ID.TwoSpiceOrDeploy);
-                adjustable_gains.Add(ID.FourSpiceOrDeployTwo);
-                adjustable_gains.Add(ID.GetMakerHook);
-                adjustable_gains.Add(ID.DestroyShieldWall);
-                adjustable_gains.Add(ID.WildBump);
+                cost_targets = uprising_cost_targets;
+                gain_targets = uprising_gain_targets;
             }
         }
 
@@ -299,7 +163,7 @@ namespace DIGeneratorLibrary
         {
             foreach(Space space in spaces)
             {
-                Console.WriteLine($"{space.Name}:");
+                Console.WriteLine($"{space.Balance(weights_base)}: {space.Name}:");
                 foreach(KeyValuePair<ID, int> kvp in space.Costs){
                     if (kvp.Value > 0)
                     {
@@ -314,7 +178,7 @@ namespace DIGeneratorLibrary
                         Console.Write($"{kvp.Value} {kvp.Key}, ");
                     }
                 }
-                Console.Write("\b\b\n\n");
+                Console.Write($"\b\b\n\n");
             }
         }
 
@@ -334,6 +198,8 @@ namespace DIGeneratorLibrary
             return (Spaces)serializer.Deserialize(reader, typeof(Spaces));
         }
     }
+
+    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
     public enum ID
     {
         GoingToSpace = 0,
@@ -377,7 +243,7 @@ namespace DIGeneratorLibrary
         WildBump = 38
     };
 
-    [JsonConverter(typeof(StringEnumConverter))]
+    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
     public enum Version
     {
         Base = 0,
@@ -397,291 +263,7 @@ namespace DIGeneratorLibrary
             Spaces spaces = Spaces.LoadFromJSON("spaces.json");
             spaces.Filter(version);
 
-            Random rnd = new Random();
-            //distribute necessary minimums
-            foreach (KeyValuePair<ID, int?> entry in spaces.GlobalGainMinimums)
-            {
-                int? minimum = 0;
-                if (!spaces.GlobalGainMinimums.TryGetValue(entry.Key, out minimum)) continue;
-                if (entry.Key == ID.WaterValue)
-                {
-                    //Console.WriteLine("Adding water");
-                    /*List<Space> spaces2 = new List<Space>();
-                    spaces.GetSpaces().ForEach((item) =>
-                    {
-                        spaces2.Add(item);
-                    });*/
-
-                    //spaces2 = (List<Space>)spaces2.Shuffle();
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        if(space.Name=="High Council" || space.Name == "Swordmaster")
-                        {
-                            continue;
-                        }
-                        if(space.TotalCostMinimum is not null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {space.Name}");
-                            space.SetGainMin(entry.Key, 1);
-                            minimum--;
-                        }
-                        if (minimum == 0)
-                        {
-                            break;
-                        }   
-                    }
-                }
-                if (entry.Key == ID.SpiceValue)
-                {
-                    /*Console.WriteLine("Adding spice");
-                    List<Space> spaces2 = new List<Space>();
-                    spaces.GetSpaces().ForEach((item) =>
-                    {
-                        spaces2.Add(item);
-                    });*/
-
-                    //spaces2 = (List<Space>)spaces2.Shuffle();
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        if (space.Name == "High Council" || space.Name == "Swordmaster")
-                        {
-                            continue;
-                        }
-                        int val = rnd.Next(1, Math.Min((int)minimum, 5));
-                        if (space.TotalCostMinimum is not null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {val} {space.Name}");
-                            space.SetGainMin(entry.Key, val);
-                            minimum -= val;
-                        }
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-                if (entry.Key == ID.SolariValue)
-                {
-
-                    /*    Console.WriteLine("Adding solari");
-                    List<Space> spaces2 = new List<Space>();
-                    spaces.GetSpaces().ForEach((item) =>
-                    {
-                        spaces2.Add(item);
-                    });*/
-
-                    //spaces2 = (List<Space>)spaces2.Shuffle();
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        if (space.Name == "High Council" || space.Name == "Swordmaster")
-                        {
-                            continue;
-                        }
-                        int val = rnd.Next(1, Math.Min((int)minimum, 9));
-                        if (space.TotalCostMinimum is not null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {val} {space.Name}");
-                            space.SetGainMin(entry.Key, val);
-                            minimum -= val;
-                        }
-                        if (space.TotalCostMinimum is null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {val} {space.Name}");
-                            space.SetGainMin(entry.Key, 1);
-                            minimum -= 1;
-                        }
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-                if (entry.Key == ID.Combat)
-                {
-
-                    /*    Console.WriteLine("Adding solari");
-                    List<Space> spaces2 = new List<Space>();
-                    spaces.GetSpaces().ForEach((item) =>
-                    {
-                        spaces2.Add(item);
-                    });*/
-
-                    //spaces2 = (List<Space>)spaces2.Shuffle();
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        Console.WriteLine($"Set {entry.Key} {space.Name}");
-                        space.SetGainMin(entry.Key, 1);
-                        minimum -= 1;
-                        //Console.WriteLine("Combat added");
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-                if (entry.Key == ID.DrawCard)
-                {
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        if (space.Name == "High Council" || space.Name == "Swordmaster")
-                        {
-                            continue;
-                        }
-                        int val = rnd.Next(1, Math.Min((int)minimum, 4));
-                        if (space.TotalCostMinimum is not null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {val} {space.Name}");
-                            space.SetGainMin(entry.Key, val);
-                            minimum -= val;
-                        }
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-                if (entry.Key == ID.DrawIntrigue)
-                {
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        if (space.Name == "High Council" || space.Name == "Swordmaster")
-                        {
-                            continue;
-                        }
-                        int val = rnd.Next(1, Math.Min((int)minimum, 4));
-                        if (space.TotalCostMinimum is not null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {val} {space.Name}");
-                            space.SetGainMin(entry.Key, val);
-                            minimum -= val;
-                        }
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (entry.Key == ID.GainTroops)
-                {
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-                        if (space.Name == "High Council" || space.Name == "Swordmaster")
-                        {
-                            continue;
-                        }
-                        int val = rnd.Next(1, Math.Min((int)minimum, 6));
-                        if (space.TotalCostMinimum is not null)
-                        {
-                            Console.WriteLine($"Set {entry.Key} {val} {space.Name}");
-                            space.SetGainMin(entry.Key, val);
-                            minimum -= val;
-                        }
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (entry.Key == ID.StealIntrigue)
-                {
-                    //Console.WriteLine("Adding water");
-                    /*List<Space> spaces2 = new List<Space>();
-                    spaces.GetSpaces().ForEach((item) =>
-                    {
-                        spaces2.Add(item);
-                    });*/
-
-                    //spaces2 = (List<Space>)spaces2.Shuffle();
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-
-
-                        Console.WriteLine($"Set {entry.Key} {space.Name}");
-                        space.SetGainMin(entry.Key, 1);
-                        space.Gains.TryAdd(ID.StealIntrigue, 1);
-                        minimum--;
-
-                        if (minimum == 0)
-                        {
-                            break;
-                        }
-
-
-
-                    }
-                }
-
-            }
-
-            foreach (KeyValuePair<ID, int?> entry in spaces.GlobalCostMinimums)
-            {
-                int? minimum = 0;
-                if (!spaces.GlobalCostMinimums.TryGetValue(entry.Key, out minimum)) continue;
-                if (entry.Key == ID.Faction2req)
-                {
-                    //Console.WriteLine("Adding water");
-                    /*List<Space> spaces2 = new List<Space>();
-                    spaces.GetSpaces().ForEach((item) =>
-                    {
-                        spaces2.Add(item);
-                    });*/
-
-                    //spaces2 = (List<Space>)spaces2.Shuffle();
-
-                    foreach (Space space in spaces.GetSpaces().Shuffle())
-                    {
-
-                        if (space.Costs.TryGetValue(ID.FactionSpace,out int total))
-                        {
-                            if (total > 0)
-                            {
-                                continue;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Set {entry.Key} {space.Name}");
-                                space.SetCostMin(entry.Key, 1);
-                                space.Costs.TryAdd(ID.Faction2req, 1);
-                                minimum--;
-
-                                if (minimum == 0)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Set {entry.Key} {space.Name}");
-                            space.SetCostMin(entry.Key, 1);
-                            space.Costs.TryAdd(ID.Faction2req, 1);
-                            minimum--;
-
-                            if (minimum == 0)
-                            {
-                                break;
-                            }
-                        }
-                        
-                        
-                    }
-                }
-                
-
-            }
-
-
-            spaces.Generate();
+            spaces.Generate(version);
             
 
 
@@ -857,6 +439,7 @@ namespace DIGeneratorLibrary
                 .SetGainMin(ID.HighCouncil, 1)
                 .SetGain(ID.HighCouncil, 1)
                 .SetCost(ID.Oncegame, 1)
+                //.SetNoGains()
                  );
             spaces.Add(new Space("Mentat")
                 .SetVersion(Version.Base)
@@ -867,6 +450,7 @@ namespace DIGeneratorLibrary
                 .SetGainMax(ID.Mentat, 1)
                 .SetGainMin(ID.Mentat, 1)
                 .SetGain(ID.Mentat, 1)
+                //.SetNoGains()
                  );
             spaces.Add(new Space("Swordmaster")
                 .SetVersion(Version.Base)
@@ -880,6 +464,7 @@ namespace DIGeneratorLibrary
                 .SetGainMin(ID.Swordmaster, 1)
                 .SetGain(ID.Swordmaster, 1)
                 .SetCost(ID.Oncegame, 1)
+                //.SetNoGains()
                  );
             spaces.Add(new Space("Hall of Oratory")
                 .SetVersion(Version.Base)
@@ -1063,8 +648,19 @@ namespace DIGeneratorLibrary
         [JsonProperty("totalCostMinimum")]
         public double? TotalCostMinimum { get; set; }
 
+        [JsonProperty("CostsAllowed")]
+        public bool CostsAllowed { get; set; } = true;
+        [JsonProperty("GainsAllowed")]
+        public bool GainsAllowed { get; set; } = true;
+
         // helpers
-        public Space() { }
+        public Space() { 
+            foreach(ID id in Enum.GetValues<ID>())
+            {
+                Costs.Add(id, 0);
+                Gains.Add(id, 0);
+            }
+        }
 
         public Space(string name) { Name = name; }
 
@@ -1091,7 +687,7 @@ namespace DIGeneratorLibrary
         public Space SetTotalCostMinimum(int value) { TotalCostMinimum = value; return this; }
         //public int GetTotalCostMinimum() { return TotalCostMinimum; }
         public Space SetNoCosts() {
-            foreach(ID id in Enum.GetValues<ID>())
+            /*foreach(ID id in Enum.GetValues<ID>())
             {
                 if (id != ID.GoingToSpace && id != ID.FactionSpace && id != ID.Oncegame && id != ID.GreenSpace && id != ID.BlueSpace && id != ID.YellowSpace)
                 {
@@ -1099,7 +695,21 @@ namespace DIGeneratorLibrary
                 }
             }
                 
-            return this;
+            return this;*/
+            CostsAllowed = false; return this;
+        }
+        public Space SetNoGains()
+        {
+            /*foreach(ID id in Enum.GetValues<ID>())
+            {
+                if (id != ID.GoingToSpace && id != ID.FactionSpace && id != ID.Oncegame && id != ID.GreenSpace && id != ID.BlueSpace && id != ID.YellowSpace)
+                {
+                    CostMaximums[id] = 0;
+                }
+            }
+                
+            return this;*/
+            GainsAllowed = false; return this;
         }
         public double Balance(double[] weights_base)
         {

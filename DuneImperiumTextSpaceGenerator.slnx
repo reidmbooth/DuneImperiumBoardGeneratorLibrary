@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="DIGeneratorLibrary/DIGeneratorLibrary.csproj" />
   <Project Path="DuneImperiumTextSpaceGenerator/DuneImperiumTextSpaceGenerator.csproj" />
+  <Project Path="TestProject/TestProject.csproj" Id="ed8b1e2e-5999-4fc9-b819-10e0f344de46" />
 </Solution>
