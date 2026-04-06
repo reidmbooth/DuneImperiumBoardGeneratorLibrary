@@ -6,6 +6,7 @@ namespace DIGeneratorLibrary
     /// </summary>
     public static class RandomProvider
     {
-        public static readonly System.Random Instance = new System.Random();
+        // Use thread-safe shared Random instance available on modern runtimes
+        public static readonly System.Random Instance = System.Random.Shared;
     }
 }

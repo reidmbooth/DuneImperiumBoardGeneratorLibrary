@@ -30,10 +30,10 @@ namespace DIGeneratorLibrary
             version = _version;
         }
 
-        public void BuildPool(Random rand, ILogger logger)
+        public void BuildPool(ILogger logger)
         {
-            // use injected RNG or fallback to shared instance
-            rand ??= RandomProvider.Instance;
+            // use shared Random instance
+            var rand = RandomProvider.Instance;
             foreach (var item in config.GetItems(version)
                 .Where(i => i.id != ID.FactionSpace)
                 .Where(i => i.id != ID.GoingToSpace)
@@ -57,7 +57,7 @@ namespace DIGeneratorLibrary
                     if (r > 0)
                     {
                         int split = Math.Min(rand.Next(item.minimum_gain_split, item.maximum_gain_split + 1), r);
-                        List<int> partition = RandomPartitionInt(r, split, rand);
+                        List<int> partition = RandomPartitionInt(r, split);
                         foreach (int i in partition)
                         {
                             logger.Log(LogLevel.Debug, $"Added to gain pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
@@ -81,7 +81,7 @@ namespace DIGeneratorLibrary
                     if (r > 0)
                     {
                         int split = Math.Min(rand.Next(item.minimum_cost_split, item.maximum_cost_split + 1), r);
-                        List<int> partition = RandomPartitionInt(r, split, rand);
+                        List<int> partition = RandomPartitionInt(r, split);
                         foreach (int i in partition)
                         {
                             logger.Log(LogLevel.Debug, $"Added to cost pool {i} {item.id} with total value {i * weights_base[(int)item.id]}");
@@ -110,10 +110,12 @@ namespace DIGeneratorLibrary
             logger.Log(LogLevel.Debug, $"Total costs: {costs_total} Total gains: {gains_total}");
         }
 
-        public static List<int> RandomPartitionInt(int x, int y, Random _rng)
+        public static List<int> RandomPartitionInt(int x, int y)
         {
             if (y <= 0) throw new ArgumentException("y must be positive.", nameof(y));
             if (x < y) throw new ArgumentException("x must be >= y so each summand is at least 1.", nameof(x));
+
+            var rng = RandomProvider.Instance;
 
             // Produce lower-variance partitions by starting with the even split (floor division)
             // and distributing the remainder (+1) to random indices. This makes outcomes like
@@ -125,7 +127,7 @@ namespace DIGeneratorLibrary
             if (remainder > 0)
             {
                 // choose 'remainder' distinct indices to increment by 1
-                var indices = Enumerable.Range(0, y).OrderBy(i => _rng.Next()).Take(remainder);
+                var indices = Enumerable.Range(0, y).OrderBy(i => rng.Next()).Take(remainder);
                 foreach (int idx in indices)
                     result[idx] += 1;
             }
@@ -140,18 +142,18 @@ namespace DIGeneratorLibrary
                 // pick donor with value > 1
                 var donors = result.Select((val, idx) => (val, idx)).Where(p => p.val > 1).ToList();
                 if (donors.Count == 0) break;
-                var donor = donors[_rng.Next(donors.Count)].idx;
+                var donor = donors[rng.Next(donors.Count)].idx;
 
                 int recipient = donor;
                 // pick a distinct recipient
                 if (y > 1)
                 {
                     while (recipient == donor)
-                        recipient = _rng.Next(0, y);
+                        recipient = rng.Next(0, y);
                 }
 
                 int maxMove = Math.Min( Math.Max(1, result[donor] - 1), 3); // move at most 3 to avoid extremes
-                int move = _rng.Next(1, maxMove + 1);
+                int move = rng.Next(1, maxMove + 1);
                 result[donor] -= move;
                 result[recipient] += move;
             }

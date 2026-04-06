@@ -55,8 +55,8 @@ namespace DIGeneratorLibrary
             }
             GeneratorConfig config = GeneratorConfig.LoadFromJson("config.json");
             ItemPoolBuilder ipb = new ItemPoolBuilder(config, weights_base, v);
-            // pass shared RNG instance
-            ipb.BuildPool(rand ?? RandomProvider.Instance, logger);
+            // Build pool using shared RNG inside builder
+            ipb.BuildPool(logger);
             SpaceAssembler sa = new SpaceAssembler(ipb.GetGainPool(), ipb.GetCostPool(), spaces, weights_base);
             sa.Assemble(logger);
             //config.Construct();

@@ -11,7 +11,7 @@ namespace TestProject
             for (int k = 5; k < 105; k++)
             {
                 int sum = 0;
-                List<int> sum_list = DIGeneratorLibrary.ItemPoolBuilder.RandomPartitionInt(k, 5, rand);
+                List<int> sum_list = DIGeneratorLibrary.ItemPoolBuilder.RandomPartitionInt(k, 5);
                 foreach(int i in sum_list)
                 {
                     sum += i;
@@ -26,7 +26,7 @@ namespace TestProject
             Random rand = new Random();
             for (int k = 5; k < 105; k++)
             {
-                List<int> sum_list = DIGeneratorLibrary.ItemPoolBuilder.RandomPartitionInt(k, 5, rand);
+                List<int> sum_list = DIGeneratorLibrary.ItemPoolBuilder.RandomPartitionInt(k, 5);
                 Assert.Equal(5, sum_list.Count);
             }
         }

@@ -127,13 +127,13 @@ namespace DIGeneratorLibrary
             return total_costs;
         }
 
-        public void Generate(double[] weights_base, double balance_leeway, List<ID> adjustable_costs, List<ID> adjustable_gains, Random rand)
+        public void Generate(double[] weights_base, double balance_leeway, List<ID> adjustable_costs, List<ID> adjustable_gains)
         {
 
 
             int counter = 0;
-            // use provided RNG or fallback to shared
-            rand ??= RandomProvider.Instance;
+            // use shared RNG
+            var rand = RandomProvider.Instance;
             while (Math.Abs(Balance(weights_base)) > balance_leeway)
             {
                 if (counter > 10000) break;
