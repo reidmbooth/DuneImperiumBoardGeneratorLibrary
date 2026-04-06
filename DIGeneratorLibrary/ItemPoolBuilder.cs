@@ -7,12 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace DIGeneratorLibrary
 {
-    public struct PoolItem
+    public record struct PoolItem(ID id, int qty, double value);
+    /*public struct PoolItem
     {
         public ID id;
         public int qty;
         public double value;
-    }
+    }*/
     public class ItemPoolBuilder
     {
         private GeneratorConfig config;
@@ -31,7 +32,8 @@ namespace DIGeneratorLibrary
 
         public void BuildPool(Random rand, ILogger logger)
         {
-            rand = new Random();
+            // use injected RNG or fallback to shared instance
+            rand ??= RandomProvider.Instance;
             foreach (var item in config.GetItems(version)
                 .Where(i => i.id != ID.FactionSpace)
                 .Where(i => i.id != ID.GoingToSpace)
@@ -102,16 +104,9 @@ namespace DIGeneratorLibrary
                 //actually make balances
             }
 
-            double gains_total = 0;
-            double costs_total = 0;
-            foreach (PoolItem p in GainPoolItems)
-            {
-                gains_total += p.value;
-            }
-            foreach (PoolItem p in CostPoolItems)
-            {
-                costs_total += p.value;
-            }
+            double gains_total = GainPoolItems.Sum(g => g.value);
+            double costs_total = CostPoolItems.Sum(c => c.value);
+
             logger.Log(LogLevel.Debug, $"Total costs: {costs_total} Total gains: {gains_total}");
         }
 
