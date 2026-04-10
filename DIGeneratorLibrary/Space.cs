@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -7,32 +8,32 @@ namespace DIGeneratorLibrary
 {
     public class Space
     {
-        [JsonProperty("name")]
+        [JsonProperty("Name")]
         public string Name { get; set; }
 
-        [JsonProperty("versions")]
+        [JsonProperty("Versions")]
         public HashSet<Version> Versions { get; set; } = new();
 
-        [JsonProperty("costs")]
+        [JsonProperty("Costs")]
         public Dictionary<ID, int> Costs { get; set; } = new();
 
-        [JsonProperty("gains")]
+        [JsonProperty("Gains")]
         public Dictionary<ID, int> Gains { get; set; } = new();
 
         // nullable so missing entries mean "no explicit bound"
-        [JsonProperty("costMinimums")]
+        [JsonProperty("CostMinimums")]
         public Dictionary<ID, int?> CostMinimums { get; set; } = new();
 
-        [JsonProperty("costMaximums")]
+        [JsonProperty("CostMaximums")]
         public Dictionary<ID, int?> CostMaximums { get; set; } = new();
 
-        [JsonProperty("gainMinimums")]
+        [JsonProperty("GainMinimums")]
         public Dictionary<ID, int?> GainMinimums { get; set; } = new();
 
-        [JsonProperty("gainMaximums")]
+        [JsonProperty("GainMaximums")]
         public Dictionary<ID, int?> GainMaximums { get; set; } = new();
 
-        [JsonProperty("totalCostMinimum")]
+        [JsonProperty("TotalCostMinimum")]
         public double? TotalCostMinimum { get; set; }
 
         [JsonProperty("CostsAllowed")]
@@ -59,14 +60,10 @@ namespace DIGeneratorLibrary
         public Space SetCostMax(ID id, int value) { CostMaximums[id] = value; return this; }
         public Space SetGainMin(ID id, int value) { GainMinimums[id] = value; return this; }
         public Space SetGainMax(ID id, int value) { GainMaximums[id] = value; return this; }
+
+        private const int MaxBalanceIterations = 10000;
         public Space Default(ID id)
         {
-            /*if (id == ID.FactionSpace)
-            {
-                SetCost(ID.BlueSpace, 0);
-                SetCostMax(ID.BlueSpace, 0);
-                SetCost(id, 1);
-            }*/
             SetGainMax(ID.Combat, 1);
             SetCostMax(ID.Faction2req, 1);
             SetCost(id, 1);
@@ -77,28 +74,10 @@ namespace DIGeneratorLibrary
         //public int GetTotalCostMinimum() { return TotalCostMinimum; }
         public Space SetNoCosts()
         {
-            /*foreach(ID id in Enum.GetValues<ID>())
-            {
-                if (id != ID.GoingToSpace && id != ID.FactionSpace && id != ID.Oncegame && id != ID.GreenSpace && id != ID.BlueSpace && id != ID.YellowSpace)
-                {
-                    CostMaximums[id] = 0;
-                }
-            }
-                
-            return this;*/
             CostsAllowed = false; return this;
         }
         public Space SetNoGains()
         {
-            /*foreach(ID id in Enum.GetValues<ID>())
-            {
-                if (id != ID.GoingToSpace && id != ID.FactionSpace && id != ID.Oncegame && id != ID.GreenSpace && id != ID.BlueSpace && id != ID.YellowSpace)
-                {
-                    CostMaximums[id] = 0;
-                }
-            }
-                
-            return this;*/
             GainsAllowed = false; return this;
         }
         public double Balance(double[] weights_base)
@@ -127,7 +106,7 @@ namespace DIGeneratorLibrary
             return total_costs;
         }
 
-        public void Generate(double[] weights_base, double balance_leeway, List<ID> adjustable_costs, List<ID> adjustable_gains)
+        public void Generate(double[] weights_base, double balance_leeway, List<ID> adjustable_costs, List<ID> adjustable_gains, ILogger logger)
         {
 
 
@@ -136,7 +115,11 @@ namespace DIGeneratorLibrary
             var rand = RandomProvider.Instance;
             while (Math.Abs(Balance(weights_base)) > balance_leeway)
             {
-                if (counter > 10000) break;
+                if (counter > MaxBalanceIterations)
+                {
+                    logger.Log(LogLevel.Warning, "Warning, Generate hit max iterations without balancing, accepting current configuration");
+                    break;
+                }
                 counter++;
                 foreach (var kv in GainMinimums)
                 {
@@ -151,38 +134,34 @@ namespace DIGeneratorLibrary
                     else
                     {
                         Gains.Add(id, v.GetValueOrDefault());
-                        //Gains.TryAdd(id, v.GetValueOrDefault());
                     }
-                    //if (GainMinimums.TryGetValue(id, out var min) && !min.HasValue) { Gains.Add(id, )}
-                    Console.WriteLine($"Set minimum {id} to {Gains[id]} on {Name}");
+                    logger.Log(LogLevel.Debug, $"Set minimum {id} to {Gains[id]} on {Name}");
                 }
-
-                if (CheckTotalCosts(weights_base) < TotalCostMinimum)
+                if(TotalCostMinimum is not null)
                 {
-                    IEnumerable<ID> s2 = adjustable_costs.Shuffle();
-                    //too few costs
-                    foreach (ID id in s2)
+                    if (CheckTotalCosts(weights_base) < TotalCostMinimum)
                     {
-                        int cost = 0;
-                        Costs.TryGetValue(id, out cost);
-                        int? maximum_cst = 0;
-                        if (CostMaximums.TryGetValue(id, out maximum_cst))
+                        IEnumerable<ID> s2 = adjustable_costs.Shuffle();
+                        //too few costs
+                        foreach (ID id in s2)
                         {
-                            if (cost + 1 > maximum_cst)
+                            int cost = 0;
+                            Costs.TryGetValue(id, out cost);
+                            int? maximum_cst = 0;
+                            if (CostMaximums.TryGetValue(id, out maximum_cst))
                             {
-                                continue;
+                                if (cost + 1 > maximum_cst)
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    logger.Log(LogLevel.Debug, "Adding cost for space cost minimums");
+                                    Costs[id] += 1;
+                                }
                             }
-                            else
-                            {
-                                Console.WriteLine("Adding cost for space cost minimums");
-                                //if (!Costs.TryAdd(id, cost + 1))
-                                //{
-                                Costs[id] += 1;
-                                //}
-                                //Costs[id] += 1;
-                            }
-                        }
 
+                        }
                     }
                 }
                 double difference = Balance(weights_base);
@@ -192,7 +171,6 @@ namespace DIGeneratorLibrary
                     switch (pattern)
                     {
                         case 1:
-                            //Console.WriteLine("Too many costs?");
                             IEnumerable<ID> s = adjustable_costs.Shuffle();
                             //too many costs
                             foreach (ID id in s)
@@ -208,31 +186,21 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        //if (!Costs.TryAdd(id, cost - 1))
-                                        //{
                                         Costs[id] -= 1;
-                                        //}
-                                        //Costs.Add(id, cost - 1);
-                                        //Costs[id] -= 1;
-                                        Console.WriteLine($"Adjusting cost down of {id} for {Name}");
+                                        logger.Log(LogLevel.Debug, $"Adjusting cost down of {id} for {Name}");
                                         break;
                                     }
                                 }
                                 else if (cost - 1 >= 0)
                                 {
-                                    //if (!Costs.TryAdd(id, cost - 1))
-                                    //{
                                     Costs[id] -= 1;
-                                    //}
-                                    //Costs[id] -= 1;
-                                    Console.WriteLine($"Adjusting cost down of {id} for {Name}");
+                                    logger.Log(LogLevel.Debug, $"Adjusting cost down of {id} for {Name}");
                                     break;
                                 }
                             }
                             break;
 
                         case 2:
-                            //Console.WriteLine("Too few gains?");
                             IEnumerable<ID> s2 = adjustable_gains.Shuffle();
                             //too few gains
                             foreach (ID id in s2)
@@ -248,24 +216,15 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        //if(!Gains.TryAdd(id, gain + 1))
-                                        //{
                                         Gains[id] += 1;
-                                        //}
-                                        //Gains.TryAdd(id, gain + 1);
-                                        //Gains[id] += 1;
-                                        Console.WriteLine($"Adjusting gain up of {id} for {Name}");
+                                        logger.Log(LogLevel.Debug, $"Adjusting gain up of {id} for {Name}");
                                         break;
                                     }
                                 }
                                 else
                                 {
-                                    //if (!Gains.TryAdd(id, gain + 1))
-                                    //{
                                     Gains[id] += 1;
-                                    //}
-                                    //Gains[id] += 1;
-                                    Console.WriteLine($"Adjusting gain up of {id} for {Name}");
+                                    logger.Log(LogLevel.Debug, $"Adjusting gain up of {id} for {Name}");
                                     break;
                                 }
                             }
@@ -280,7 +239,6 @@ namespace DIGeneratorLibrary
                     switch (pattern)
                     {
                         case 1:
-                            //Console.WriteLine("Too many gains?");
                             IEnumerable<ID> s = adjustable_gains.Shuffle();
                             //too many gains
                             foreach (ID id in s)
@@ -296,31 +254,21 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        //if (!Gains.TryAdd(id, gain - 1))
-                                        //{
                                         Gains[id] -= 1;
-                                        //}
-                                        //Gains.Add(id, gain - 1);
-                                        //Gains[id] -= 1;
-                                        Console.WriteLine($"Adjusting gain down of {id} for {Name}");
+                                        logger.Log(LogLevel.Debug, $"Adjusting gain down of {id} for {Name}");
                                         break;
                                     }
                                 }
                                 else if (gain - 1 >= 0)
                                 {
-                                    //if (!Gains.TryAdd(id, gain - 1))
-                                    //{
                                     Gains[id] -= 1;
-                                    //}
-                                    //Gains[id] -= 1;
-                                    Console.WriteLine($"Adjusting gain down of {id} for {Name}");
+                                    logger.Log(LogLevel.Debug, $"Adjusting gain down of {id} for {Name}");
                                     break;
                                 }
                             }
                             break;
 
                         case 2:
-                            //Console.WriteLine("Too few costs?");
                             IEnumerable<ID> s2 = adjustable_costs.Shuffle();
                             //too few costs
                             foreach (ID id in s2)
@@ -336,25 +284,15 @@ namespace DIGeneratorLibrary
                                     }
                                     else
                                     {
-                                        //if (!Costs.TryAdd(id, cost + 1))
-                                        //{
                                         Costs[id] += 1;
-                                        //}
-                                        //Costs.Add(id, cost + 1);
-                                        //Costs[id] += 1;
-                                        Console.WriteLine($"Adjusting cost up of {id} for {Name}");
+                                        logger.Log(LogLevel.Debug, $"Adjusting cost up of {id} for {Name}");
                                         break;
                                     }
                                 }
                                 else
                                 {
-                                    //if (!Costs.TryAdd(id, cost + 1))
-                                    //{
                                     Costs[id] += 1;
-                                    //}
-                                    //Costs.Add(id, cost + 1);
-                                    //Costs[id] += 1;
-                                    Console.WriteLine($"Adjusting cost up of {id} for {Name}");
+                                    logger.Log(LogLevel.Debug, $"Adjusting cost up of {id} for {Name}");
                                     break;
                                 }
                             }
@@ -375,7 +313,7 @@ namespace DIGeneratorLibrary
                     }
                 }
             }
-            Console.WriteLine($"Space balance: {Balance(weights_base)} with leeway {balance_leeway}");
+            logger.Log(LogLevel.Debug, $"Space balance: {Balance(weights_base)} with leeway {balance_leeway}");
         }
 
         // validate against global min/max arrays or weights before accepting this configuration
@@ -402,10 +340,6 @@ namespace DIGeneratorLibrary
             return true;
         }
 
-        public void DeleteDuplicates()
-        {
-
-        }
 
         // Example serializer settings:
         // var settings = new JsonSerializerSettings {

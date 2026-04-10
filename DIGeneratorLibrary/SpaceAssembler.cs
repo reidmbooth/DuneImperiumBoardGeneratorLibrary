@@ -34,51 +34,7 @@ namespace DIGeneratorLibrary
                 combined.Add(p2);
             }
 
-
-
-
-            
-            //Spaces = Spaces.OrderByDescending(p => Math.Abs(p.Balance(weights_base))).ToList<Space>();
-
-            //force add benefit to mentat and force good costs for swordmaster and high council if available
-            Space mentat = Spaces.Where(i => i.Name == "Mentat").FirstOrDefault<Space>();
-            Space swordmaster = Spaces.Where(i => i.Name == "Swordmaster").FirstOrDefault<Space>();
-            Space highcouncil = Spaces.Where(i => i.Name == "High Council").FirstOrDefault<Space>();
-            if (mentat is null || swordmaster is null || highcouncil is null)
-            {
-                throw new Exception("Space missing exception");
-            }
-            ID[] toadd = { ID.DrawIntrigue, ID.WaterValue, ID.SpiceValue, ID.DrawCard, ID.Trash };
-            ID forced = toadd.Shuffle().First();
-            mentat.Gains[forced]++;//add a gain to mentat
-            for(int i = 0; i < combined.Count; i++)
-            {
-                PoolItem p = combined[i];
-                if(p.id == forced)
-                {
-                    if(p.qty == 1)
-                    {
-                        combined.Remove(p);
-                        break;
-                    }
-                    else
-                    {
-                        p.qty--;
-                    }
-                }
-            }
-
             combined = combined.OrderByDescending(p => Math.Abs(p.value)).ToList<PoolItem>();
-            //do some specific initial configurations to create a more even game
-            /*Space mentat = Spaces.Where(i => i.Name == "Mentat").FirstOrDefault<Space>();
-            Space swordmaster = Spaces.Where(i => i.Name == "Swordmaster").FirstOrDefault<Space>();
-            Space highcouncil = Spaces.Where(i => i.Name == "High Council").FirstOrDefault<Space>();
-            if (mentat is null || swordmaster is null || highcouncil is null)
-            {
-                throw new Exception("Space missing exception");
-            }
-            
-            combined.Select(i => )*/
 
             foreach (PoolItem p in combined)
             {
@@ -115,23 +71,7 @@ namespace DIGeneratorLibrary
                         break;
                     }
                 }
-                /*foreach(Space space in Spaces)
-                {
-                    if (p.value < 0)
-                    {
-                        //find space with largest balance
-                    }
-                }*/
-                /*if (p.value < 0)
-                {
-                    least_impact_causing = least_impact_causing.SetCost(p.id, p.qty + least_impact_causing.Costs[p.id]);
-                }
-                else if (p.value > 0)
-                {
-                    least_impact_causing = least_impact_causing.SetGain(p.id, p.qty + least_impact_causing.Gains[p.id]);
-                }*/
 
-                //Console.WriteLine($"Adding {p.id} {p.qty} {p.value} to space {least_impact_causing.Name} seemed to be the best improvement, value {least_impact}");
             }
 
             

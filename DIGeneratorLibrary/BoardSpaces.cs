@@ -12,25 +12,25 @@ namespace DIGeneratorLibrary
         [JsonProperty]
         private List<Space> spaces { get; set; }
 
-        [JsonProperty("globalGainMinimums")]
+        [JsonProperty("GlobalGainMinimums")]
         public Dictionary<ID, int?> GlobalGainMinimums { get; set; } = new();
 
-        [JsonProperty("globalGainMaximums")]
+        [JsonProperty("GlobalGainMaximums")]
         public Dictionary<ID, int?> GlobalGainMaximums { get; set; } = new();
 
-        [JsonProperty("globalCostMinimums")]
+        [JsonProperty("GlobalCostMinimums")]
         public Dictionary<ID, int?> GlobalCostMinimums { get; set; } = new();
 
-        [JsonProperty("globalCostMaximums")]
+        [JsonProperty("GlobalCostMaximums")]
         public Dictionary<ID, int?> GlobalCostMaximums { get; set; } = new();
 
-        [JsonProperty("weights")]
+        [JsonProperty("Weights")]
         //private double[] weights_base = { 2.5, 1, 1.8, 2.0, 1.25, 1.5, 0.1, 0.5, 1.0, 0.5, 1.5, 2, 1.5, 1, 1.5, 1, 2, 8, 11, 1, 2, 2, 3, 2, 1.5, 1.5, 4.5, -0.5, -0.5, 2, 1, 2, 2.5, 2, 4, 8, 1, 1.5, 4.5 };
         private double[] weights_base = { 2.6, 1, 1.57, 1.52, 1.3, 1.6, 0.1, 0.3, 1.1, 0.7, 1.6, 2, 1.57, 0.73, 1.6, 0.6, 2.14, 8, 11, 0.95, 2.3, 2.2, 3.3, 1.3, 1.6, 1.51, 4.41, -0.73, 0.05, 1.6, 4.85, 2.1, 0.75, 2.17, 3.14, 6.18, 0, 1.6, 4.59 };
 
 
-        [JsonProperty("balanceLeeway")]
-        private double balance_leeway = 0.5;
+        [JsonProperty("BalanceLeeway")]
+        private const double balance_leeway = 0.5;
 
         private Random rand;
 
@@ -48,12 +48,18 @@ namespace DIGeneratorLibrary
 
         public void Generate(Version v, ILogger logger)
         {
-            if (!File.Exists("config.json"))
+            if (!File.Exists("config_balanced.json"))
             {
-                logger.Log(LogLevel.Error, "config.json not found. Please create a config file with the appropriate structure.");
+                logger.Log(LogLevel.Error, "config_balanced.json not found. Please create a config file with the appropriate structure.");
                 return;
             }
-            GeneratorConfig config = GeneratorConfig.LoadFromJson("config.json");
+            GeneratorConfig config = GeneratorConfig.LoadFromJson("config_balanced.json");
+
+            if(config == null)
+            {
+                logger.Log(LogLevel.Error, "Failed to load config. Please ensure config_balanced.json is properly formatted and contains the necessary data.");
+                return;
+            }
             ItemPoolBuilder ipb = new ItemPoolBuilder(config, weights_base, v);
             // Build pool using shared RNG inside builder
             ipb.BuildPool(logger);
@@ -126,12 +132,6 @@ namespace DIGeneratorLibrary
             rand = RandomProvider.Instance;
         }
 
-        public BoardSpaces(Random _rand)
-        {
-            spaces = new List<Space>();
-            rand = _rand ?? RandomProvider.Instance;
-        }
-
         public List<Space> GetSpaces()
         {
             return spaces;
@@ -171,38 +171,55 @@ namespace DIGeneratorLibrary
             }
         }
 
-        public void PrintInformation()
+        public void PrintInformation(ILogger logger)
         {
+            StringBuilder stringBuilder = new StringBuilder();
             foreach (Space space in spaces)
             {
-                Console.WriteLine($"{space.Name}:");
-                Console.WriteLine($"Space Balance: {Math.Round(space.Balance(weights_base), 2)}");
+                
+                stringBuilder.AppendLine($"{space.Name}:");
+                stringBuilder.AppendLine($"Space Balance: {Math.Round(space.Balance(weights_base), 2)}");
 
-                Console.Write(string.Join(", ", space.Costs.Where(kvp => kvp.Value > 0).Select(kvp => $"{kvp.Value} {kvp.Key}")));
-                Console.Write(" -> ");
+                stringBuilder.Append(string.Join(", ", space.Costs.Where(kvp => kvp.Value > 0).Select(kvp => $"{kvp.Value} {kvp.Key}")));
+                stringBuilder.Append(" -> ");
 
-                Console.Write(string.Join(", ", space.Gains.Where(kvp => kvp.Value > 0).Select(kvp => $"{kvp.Value} {kvp.Key}")));
-                Console.Write("\n\n");
+                stringBuilder.Append(string.Join(", ", space.Gains.Where(kvp => kvp.Value > 0).Select(kvp => $"{kvp.Value} {kvp.Key}")));
+                stringBuilder.Append("\n\n");
+                
             }
+            logger.Log(LogLevel.Information, stringBuilder.ToString());
         }
 
         public static JsonSerializerSettings st = new JsonSerializerSettings { Formatting = Formatting.Indented, Converters = { new StringEnumConverter() } };
 
-        public void SaveToJSON(string filename)
+        public void SaveToJSON(string filename, ILogger logger)
         {
-            
-            File.WriteAllText(filename, JsonConvert.SerializeObject(this, st));
+            try
+            {
+                File.WriteAllText(filename, JsonConvert.SerializeObject(this, st));
+            }
+            catch(Exception e)
+            {
+                logger.Log(LogLevel.Error, "Failed to save spaces to JSON. Make sure the file path is correct and you have write permissions. Exception message: " + e.Message);
+            }
         }
 
-        public static BoardSpaces LoadFromJSON(string filename)
+        public static BoardSpaces LoadFromJSON(string filename, ILogger logger)
         {
-
-            TextReader reader = new StreamReader(filename);
-            JsonSerializer serializer = new JsonSerializer();
-            JsonReader jreader = new JsonTextReader(reader);
-            //serializer.
-            return serializer.Deserialize<BoardSpaces>(jreader);
-            return (BoardSpaces)serializer.Deserialize(reader, typeof(BoardSpaces));
+            try
+            {
+                using (var reader = new StreamReader(filename))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    JsonReader jreader = new JsonTextReader(reader);
+                    return serializer.Deserialize<BoardSpaces>(jreader);
+                }
+            }
+            catch(Exception e)
+            {
+                logger.Log(LogLevel.Error, "Failed to load spaces from JSON. Make sure the file path is correct and the file is properly formatted. Exception message: " + e.Message);
+            }
+            return null;
         }
     }
 }

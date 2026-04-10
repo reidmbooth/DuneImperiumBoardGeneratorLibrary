@@ -17,7 +17,7 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Base, Version.Ix, Version.IxImmo, Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.BlueSpace] = 1, [ID.GoingToSpace] = 1 },
                 Gains = new Dictionary<ID, int> { [ID.SolariFlag] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -27,7 +27,7 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Base, Version.Ix, Version.IxImmo },
                 Costs = new Dictionary<ID, int> { [ID.BlueSpace] = 1, [ID.GoingToSpace] = 1 },
                 Gains = new Dictionary<ID, int> { [ID.SolariFlag] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -36,7 +36,7 @@ namespace DIGeneratorLibrary
                 Name = "Research Station",
                 Versions = new HashSet<Version> { Version.Base, Version.Ix },
                 Costs = new Dictionary<ID, int> { [ID.BlueSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -45,7 +45,7 @@ namespace DIGeneratorLibrary
                 Name = "Research Station",
                 Versions = new HashSet<Version> { Version.IxImmo },
                 Costs = new Dictionary<ID, int> { [ID.BlueSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -54,7 +54,7 @@ namespace DIGeneratorLibrary
                 Name = "Sietch Tabr",
                 Versions = new HashSet<Version> { Version.Base, Version.Ix, Version.IxImmo },
                 Costs = new Dictionary<ID, int> { [ID.BlueSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -63,7 +63,7 @@ namespace DIGeneratorLibrary
                 Name = "Sell Melange",
                 Versions = new HashSet<Version> { Version.Base },
                 Costs = new Dictionary<ID, int> { [ID.YellowSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -72,7 +72,7 @@ namespace DIGeneratorLibrary
                 Name = "Secure Contract",
                 Versions = new HashSet<Version> { Version.Base },
                 Costs = new Dictionary<ID, int> { [ID.YellowSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -81,7 +81,7 @@ namespace DIGeneratorLibrary
                 Name = "Interstellar Shipping",
                 Versions = new HashSet<Version> { Version.Ix, Version.IxImmo },
                 Costs = new Dictionary<ID, int> { [ID.YellowSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -90,7 +90,7 @@ namespace DIGeneratorLibrary
                 Name = "Smuggling",
                 Versions = new HashSet<Version> { Version.Ix, Version.IxImmo },
                 Costs = new Dictionary<ID, int> { [ID.YellowSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -100,7 +100,7 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Base, Version.Ix, Version.IxImmo, Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.YellowSpace] = 1, [ID.GoingToSpace] = 1 },
                 Gains = new Dictionary<ID, int> { [ID.SpiceFlag] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -109,7 +109,7 @@ namespace DIGeneratorLibrary
                 Name = "Hagga Basin",
                 Versions = new HashSet<Version> { Version.Base, Version.Ix, Version.IxImmo },
                 Costs = new Dictionary<ID, int> { [ID.YellowSpace] = 1, [ID.GoingToSpace] = 1 },
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1, [ID.GainTroops] = 0 },
                 GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
@@ -354,7 +354,8 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
                 TotalCostMinimum = 2,
-                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 }
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -363,6 +364,8 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Uprising },
                 CostsAllowed = false,
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -370,7 +373,9 @@ namespace DIGeneratorLibrary
                 Name = "Uprising Heighliner",
                 Versions = new HashSet<Version> { Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
-                TotalCostMinimum = 2
+                TotalCostMinimum = 2,
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -379,6 +384,8 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Uprising },
                 CostsAllowed = false,
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -386,7 +393,9 @@ namespace DIGeneratorLibrary
                 Name = "Espionage",
                 Versions = new HashSet<Version> { Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
-                TotalCostMinimum = 2
+                TotalCostMinimum = 2,
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -395,6 +404,8 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Uprising },
                 CostsAllowed = false,
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -402,7 +413,9 @@ namespace DIGeneratorLibrary
                 Name = "Fremkit",
                 Versions = new HashSet<Version> { Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.FactionSpace] = 1, [ID.GoingToSpace] = 1 },
-                TotalCostMinimum = 2
+                TotalCostMinimum = 2,
+                GainMaximums = new Dictionary<ID, int?> { [ID.FactionBump] = 1, [ID.Combat] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.FactionBump] = 1 }
             });
 
             spaces.Add(new Space
@@ -422,7 +435,8 @@ namespace DIGeneratorLibrary
             {
                 Name = "High Council 2",
                 Versions = new HashSet<Version> { Version.Uprising },
-                Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 }
+                Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
             spaces.Add(new Space
@@ -431,7 +445,9 @@ namespace DIGeneratorLibrary
                 Versions = new HashSet<Version> { Version.Uprising },
                 Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 },
                 TotalCostMinimum = 3,
-                Gains = new Dictionary<ID, int> { [ID.PickUpWorker] = 1 }
+                Gains = new Dictionary<ID, int> { [ID.PickUpWorker] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.PickUpWorker] = 1 },
+                GainMinimums = new Dictionary<ID, int?> { [ID.PickUpWorker] = 1 }
             });
 
             spaces.Add(new Space
@@ -451,14 +467,18 @@ namespace DIGeneratorLibrary
             {
                 Name = "Assembly Hall",
                 Versions = new HashSet<Version> { Version.Uprising },
-                Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 }
+                Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
             spaces.Add(new Space
             {
                 Name = "Gather Support",
                 Versions = new HashSet<Version> { Version.Uprising },
-                Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 }
+                Costs = new Dictionary<ID, int> { [ID.GreenSpace] = 1, [ID.GoingToSpace] = 1 },
+                CostMaximums = new Dictionary<ID, int?> { [ID.Faction2req] = 1 },
+                GainMaximums = new Dictionary<ID, int?> { [ID.Combat] = 1 }
             });
 
 
@@ -481,7 +501,7 @@ namespace DIGeneratorLibrary
             //sp.SetGlobalCostMax(ID.Faction2req, 1);
 
             sp.SetSpaces(spaces);
-            sp.SaveToJSON("spaces.json");
+            sp.SaveToJSON("spaces.json", logger);
         }
     }
 }

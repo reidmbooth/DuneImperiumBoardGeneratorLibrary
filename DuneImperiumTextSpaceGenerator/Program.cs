@@ -1,15 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-/*for(int j = 0; j < 100; j++)
-{
-    int n = 5;
-    int split = 3;
-    List<int> splitt = DIGeneratorLibrary.ItemPoolBuilder.RandomPartitionInt(n, split, new Random());
-    foreach (int i in splitt)
-    {
-        Console.WriteLine(i);
-    }
-    Console.WriteLine();
-}*/
+﻿
 
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +15,11 @@ switch (option){
         break;
     case '2':
         DIGeneratorLibrary.Generator.BuildSpaces(logger);
+        //DIGeneratorLibrary.Generator.Generate(DIGeneratorLibrary.Version.Base, logger);
         DIGeneratorLibrary.Generator.Generate(DIGeneratorLibrary.Version.Base, logger);
+        break;
+    case '3':
+        DIGeneratorLibrary.Generator.BalanceConfig(logger);
         break;
 }
 
