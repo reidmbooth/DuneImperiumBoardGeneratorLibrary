@@ -290,13 +290,26 @@ namespace DIGeneratorLibrary
                 ID.Swordmaster,
                 ID.Mentat,
                 ID.PickUpWorker,
-                ID.Combat
+                ID.HighCouncil,
+                ID.Combat,
+                ID.Oncegame,
+                ID.SolariFlag,
+                ID.FactionBump,
+                ID.SpiceFlag
             };
             settings.IgnoreItemCosts = new List<ID>
             {
                 ID.GainTroops,
                 ID.GetDreadnought,
-                ID.Trash
+                ID.Trash,
+                ID.SpiceAccumulation,
+                ID.Trash,
+                ID.DrawCard,
+                ID.DrawIntrigue,
+                ID.BuyTech,
+                ID.Foldspace,
+                ID.WildBump,
+                ID.TempInfluence
             };
             var optimizer = new ConfigOptimizer(weights_base, logger);
             var result = optimizer.OptimizeConfig(settings);

@@ -119,7 +119,7 @@ namespace DIGeneratorLibrary
                 //
             }
 
-            for (int i = 0; i < 100; i++)
+            /*for (int i = 0; i < 100; i++)
             {
                 //GeneratorConfig config = GeneratorConfig.LoadFromJson($"config_balanced.json");
                 GeneratorConfig config2 = GeneratorConfig.OptimizeForMinimumImbalance(weights_base, logger, config3.configurations, Version.Ix);
@@ -147,7 +147,7 @@ namespace DIGeneratorLibrary
                 config3 = config2;
                 //config2.SaveToJson($"config_balanced.json");
                 //
-            }
+            }*/
             config3.SaveToJson($"config_balanced.json");
             //logger.LogInformation("Hello");
         }
